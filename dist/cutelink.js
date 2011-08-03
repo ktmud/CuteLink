@@ -1,3 +1,506 @@
+/**
+* CuteLink v0.0.1
+*
+* Date: Wed Aug 3 17:58:23 2011 +0800
+*
+* Copyright given up 2011, Jianchao Yang.
+*
+* You can do whatever you want with this.
+*
+*/
+
+//Extend KISSY
+(function(S) {
+  S.mix(S, {
+    /**
+    * @param {array} funs 需要执行的函数，一个文本数组.
+    * @param {object} context 函数上下文.
+    */
+    _invoke: function(funs, context) {
+      if (funs)
+        for (var i = 0; i < funs.length; i++)
+        try {
+          (new Function(funs[i])).apply(context);
+          _log(funs[i] + '已触发');
+        } catch (a) {}
+    },
+    /**
+    * 只有在开发模式下，才输出调试信息
+    */
+    _log: function() {
+      if (window._DEV_) S.log.apply(S, arguments);
+    }
+  });
+})(KISSY);
+
+KISSY.add('cutelink', function(S) {
+  var _DATA = 'data',
+  _PARAMS = 'params';
+
+  //CuteLink应用构造器
+  function CuteLink() {
+    var self = this;
+
+    S.mix(self, {
+      _inited: false,
+      camps: {}, //通过register方法注册的实例
+      callbacks: {} //全局回调函数，方便各个实例调用
+    });
+
+    return self;
+  }
+
+  //全局性的参数缓存
+  S.mix(CuteLink, {
+    camps: [], //按照初始化顺序挤入的CuteCamp
+    data: {}, //基于url的数据缓存
+    params: {} //基于路径的url参数缓存
+  });
+
+  S.augment(CuteLink, S.EventTarget, {
+    //清空缓存
+    clear: function(cachekeys) {
+      if (S.isArray(cachekeys)) {
+        S.each(cachekeys, function(key) {
+          delete CuteLink[_DATA][key];
+        });
+      } else {
+        CuteLink[_DATA] = {};
+      }
+    },
+
+    //要开始使用cutelink 必须先执行init操作
+    init: function(conf) {
+      var self = this;
+
+      //支持改变配置项后再度初始化
+      if (self._inited && !conf) return self;
+
+      var conf = S.mix({
+        //是否需要根据URL hash跳转
+        doRedirect: true
+      }, conf);
+
+      //记录下当前的路径、参数和hashtag
+      var initialUrl = window.location.href,
+      crtLocParam = initialParam = CuteLink.getLocParam(),
+      crtLocPath = CuteLink.getUrlPath(initialUrl);
+
+      //存储当前地址的真实参数
+      //不能存在 self 里
+      CuteLink[_PARAMS][crtLocPath] = crtLocParam;
+
+      var oninit = conf.oninit;
+      //如果要跳转带hash的url 并且未指定初始化执行的事件
+      if (conf.doRedirect && !oninit) {
+        CuteLink.history.locCheck();
+      } else if (S.isFunction(oninit)) {
+        oninit.call(self, self.getUrlDetail(initialUrl));
+      }
+
+      self.fire('init', conf);
+      self._inited = true;
+
+      return self;
+    }
+  });
+
+  S.CuteLink = CuteLink;
+
+  return CuteLink;
+});
+KISSY.add('cutelink/urltools', function(S, undefined) {
+  var win = window,
+  PAT_SEARCH = /\?(\w[^#]+)/,
+  PAT_URL = /([^#\?]*)(\?([^#\?]*))?(#!?([^#]*$))?/,
+  PAT_HASH = /#[^#]*$/, HASH_LEAD = '#!',
+  SLASH = '/', BLANK = '',
+  Q_MARK = '?', COMMA = ',',
+  _UNPARAM = 'unparam', _PARAM = 'param';
+
+  //根据当前的 location 返回参数对象
+  function getLocParam() {
+    return S[_UNPARAM](win.location.search.replace(Q_MARK, BLANK));
+  }
+
+  //获取location中的hash (不带#)
+  function getLocHash() {
+    return win.location.hash.replace(HASH_LEAD, BLANK);
+  }
+
+  //获取某特定url的hashtag (不带#)
+  function getUrlHash(url) {
+    if (PAT_HASH.test(url)) {
+      return url.match(PAT_HASH)[0].replace(HASH_LEAD, BLANK);
+    } else {
+      return BLANK;
+    }
+  }
+
+  //获取url中 ?... 的部分
+  function getUrlSearch(url) {
+    if (PAT_SEARCH.test(url)) {
+      return url.match(PAT_SEARCH)[1];
+    } else {
+      return BLANK;
+    }
+  }
+
+  //获取url中 ? 之前的部分
+  //如果url的host和当前地址一样，会被替换成相对地址
+  function getUrlPath(url) {
+    var loc = win.location;
+    return url.replace(PAT_SEARCH, BLANK).replace(PAT_HASH, BLANK)
+    .replace(loc.protocol + SLASH + SLASH + loc.host, BLANK);
+  }
+
+
+  /**
+  * 综合url中的hashtag和search部分，获取它所代表的实际参数
+  *
+  * 如果hash包含路径信息，
+  * 则返回真实路径和真实参数
+  * hashtag之前的参数会被忽略
+  */
+  function getUrlDetail(url) {
+    //如果当前包含 #!
+    var m = url.match(PAT_URL),
+    host_and_path = m[1],
+    search_f = m[2], //带 ?
+    search = m[3] || '', //不带 ?
+    hash_f = m[4], //带 # 或 #!
+    hash = m[5], //不带 #!
+    searchParam = S[_UNPARAM](search),
+    hashParam = {},
+    path = getUrlPath(url) || getUrlPath(win.location.href),
+    realPath;
+
+    var param = searchParam;
+
+    //如果是带参数格式的hash
+    if (hash_f && hash_f.indexOf(HASH_LEAD) == 0) {
+      //如果HASH中含有路径信息
+      if (hash.indexOf(SLASH) != -1 || hash.indexOf(Q_MARK) > 0) {
+        //[重新]进行url匹配
+        var m = hash.match(PAT_URL);
+        //获得真实路径
+        realPath = m[1];
+        //真实的查询参数
+        param = S[_UNPARAM](m[3]);
+      } else {
+        //需要的param为hash中的param
+        param = S[_UNPARAM](hash);
+      }
+    }
+
+    return {
+      path: path,
+      realPath: realPath || path,
+      param: param,
+      search: search,
+      search_f: search_f,
+      searchParam: searchParam,
+      hash: hash,
+      hash_f: hash_f,
+      hashParam: hashParam
+    };
+  }
+
+  //获取一个可能存在hashtag的url的真实地址
+  //可以直接传入 getUrlDetail 得到的对象
+  function getCleanUrl(p, forceParamObj) {
+    if (S.isString(p)) {
+      p = getUrlDetail(p);
+    }
+
+    var hash_f = p.hash_f,
+    hash = p.hash;
+
+    if (!forceParamObj && hash_f && hash_f.indexOf(HASH_LEAD) == 0) {
+      if (hash.indexOf(SLASH) != -1 || hash.indexOf(Q_MARK) > 0) {
+        //如果hash包含路径信息，直接用url hash
+        return hash;
+      } else {
+        //否则将hash作为参数
+        return p.path + Q_MARK + hash;
+      }
+    }
+
+    return p.path + Q_MARK + decodeURI(S[_PARAM](p.param));
+  }
+
+  //合并删除参数
+  function mergeParam(param, adds, removes) {
+    if (S.isObject(adds)) {
+      S.mix(param, adds);
+    }
+    if (S.isArray(removes)) {
+      S.each(removes, function(item) {
+        delete param[item];
+      });
+    }
+    return param;
+  }
+
+  //基本的Url处理函数，作为CuteLink的静态方法
+  S.mix(S.CuteLink, {
+    getLocParam: getLocParam,
+    getLocHash: getLocHash,
+    getUrlPath: getUrlPath,
+    getUrlHash: getUrlHash,
+    getUrlSearch: getUrlSearch,
+    getUrlDetail: getUrlDetail,
+    getCleanUrl: getCleanUrl,
+    mergeParam: mergeParam,
+
+    /**
+    * 根据参数cache和目标URL，
+    * 生成真正需要的地址和参数
+    * 同时负责更新参数cache
+    * @param {string} url 目标url.
+    */
+    makeRealQuery: function(url) {
+      var crtLocPath = getUrlPath(win.location.href),
+      path = getUrlPath(url) || crtLocPath;
+
+      //对于没有键值对的URL，不处理
+      if (!PAT_SEARCH.test(url)) {
+        return {
+          realPath: url,
+          url: url,
+          param: {}
+        };
+      }
+
+      var pcache = this.params,
+      to = getUrlDetail(url),
+      toParam = to[_PARAM],
+      toPath = to.realPath,
+      //从cache里获得当前路径的真实参数
+      cachedParam = pcache[toPath];
+
+
+      if (cachedParam) {
+        //对于当前已有的参数
+        for (var i in cachedParam) {
+          //如果目标参数中没有，可用直接抛弃
+          if (!toParam[i]) {
+            delete cachedParam[i];
+          }
+        }
+        //对于目标URI中的参数
+        for (var i in toParam) {
+          //如果当前参数中没有，
+          //或者当前参数中的值和目标值不一样
+          //需要更新当前参数
+          if (!cachedParam[i] || cachedParam[i] != toParam[i]) {
+            cachedParam[i] = toParam[i];
+          }
+
+        }
+      } else {
+        cachedParam = pcache[toPath] = toParam;
+      }
+
+      //对参数进行排序，防止多个不同地址对应同样请求
+      cachedParam = sortObj(cachedParam);
+
+      var fullUrl = toPath + Q_MARK + decodeURI(S[_PARAM](cachedParam));
+
+      return {
+        realPath: toPath,
+        param: cachedParam,
+        url: fullUrl
+      };
+    }
+  });
+
+  function sortObj(o) {
+    var sorted = {},
+    key, a = [];
+
+    for (key in o) {
+      if (o.hasOwnProperty(key)) {
+        a.push(key);
+      }
+    }
+
+    a.sort();
+
+    for (key = 0; key < a.length; key++) {
+      sorted[a[key]] = o[a[key]];
+    }
+    return sorted;
+  }
+});
+KISSY.add('cutelink/history', function(S, undefined) {
+  var win = window,
+  doc = document,
+  $ = S.all,
+  E = S.Event,
+  D = S.DOM,
+  CuteLink = S.CuteLink;
+
+  var HASH_LEAD = '#!',
+  PAT_HASH = /#[^#]*$/,
+  __CLRMS = '__clrms',
+  BLANK = '',
+  _hasPushState = !!(win.history && win.history.pushState);
+
+  CuteLink.History = function() {
+    //一个url 对应这项数据的调用对象
+    this.handlers = {};
+  };
+
+  function setLocHash(hashUrl, loc) {
+    var loc = loc || win.location;
+    if (hashUrl === BLANK) {
+      if (loc.hash) loc.href = loc.href.replace(PAT_HASH, BLANK);
+    } else {
+      loc.hash = HASH_LEAD + hashUrl;
+    }
+  }
+
+  S.augment(CuteLink.History, S.EventTarget, {
+    //获取当前的真实地址
+    getCrtUrl: function() {
+      return CuteLink.getCleanUrl(win.location.href);
+    },
+
+    //绑定
+    start: function() {
+      var self = this;
+
+      if (self.started) return;
+
+      self.started = true;
+
+      var current = self.getCrtUrl();
+      //oldIE = (S.UA.ie < 8);
+
+      //if (oldIE) {
+      ////创建iframe来保持状态
+      //var iframe = D.create('<iframe style="position: absolute; left: -999px; top: -999px; visibility: hidden;" height="20" scroll="yes" src="javascript:0" tabindex="-1" />');
+      //document.body.appendChild(iframe);
+      //self.iframe = iframe.contentWindow;
+
+      //var frameDoc = self.iframe.document;
+
+      //frameDoc.open();
+      ////绑定iframe 内窗口的 scroll事件
+      //frameDoc.write('<html><body><style> div { height: 20px; overflow: hidden; } </style><div></div><script> window.onscroll = function() { try { var hist = parent.window.KISSY.CuteLink.history, elems = document.getElementsByTagName("div"), i = Math.floor(document.body.scrollTop / 20), url = elems[i].id; if (!url) return; hist.setHash(url, 1); hist.checkurl(url); } catch (e) {} } </script></body></html>');
+      //frameDoc.close();
+
+      //}
+
+      if (_hasPushState) {
+        E.on(win, 'popstate', function() { self.checkUrl(); });
+      } else if ('onhashchange' in window) {
+        E.on(win, 'hashchange', function() { self.checkUrl(); });
+      } else {
+        //定时检查hash变更
+        //S.later(self.checkUrl, 50, true, self);
+      }
+
+      self.current = current;
+      self._hasPushState = _hasPushState;
+    },
+
+    //对不支持pushState的浏览器，设置location.hash (并执行载入)
+    setHash: function(url, fromFrame) {
+      var self = this;
+      //iframe = self.iframe;
+
+      //对不支持hashchange的页面，设置iframe hash来保存历史
+      //if (iframe && !fromFrame) {
+      //var frameDoc = iframe.document,
+      //tagger = frameDoc.createElement('div');
+
+      //tagger.id = url;
+
+      ////先设置location 再滚动
+      //frameDoc.location.hash = url;
+
+      //frameDoc.body.appendChild(tagger);
+
+      //}
+
+      //变更当前地址栏
+      setLocHash(url);
+    },
+
+    navigate: function(url, trigger, evtData) {
+      var self = this;
+
+      //如果指定了是谁触发的此事件
+      //存入handlers缓存
+      if (trigger) {
+        self.prevHandler = self.handlers[url] = [trigger, evtData];
+      }
+
+      //如果有window.history.pushState方法 则 pushState
+      //如果没有，则用 url hash 处理
+      // title 和 state 值基本上时没用的
+      if (self._hasPushState) {
+        win.history.pushState(null, null, url);
+      } else {
+        self.setHash(url);
+      }
+
+      self.checkUrl(url);
+    },
+
+    //根据已有的url载入某地址
+    loadUrl: function(url) {
+      var handler = this.handlers[url], trigger, evtData;
+
+      //默认根据url取trigger
+      //如果取不到，则用上一个trigger来载入当前url
+      if (handler) {
+        trigger = handler[0];
+        evtData = handler[1];
+      } else {
+        handler = this.prevHandler;
+        trigger = (handler && handler[0]) || CuteLink.defaultCamp;
+      }
+
+      //如果指定了evtData 使用evtData来加载
+      if (evtData) {
+        //data从cutelink缓存里重新取
+        evtData.data = CuteLink.data[url];
+        evtData.hasCache = !S.isUndefined(evtData.data);
+        trigger.doRequest(evtData);
+      } else if (trigger) {
+        //否则直接load url
+        //直接load的结果是不知道这次load是由什么操作所触发
+        trigger.load(url);
+      }
+    },
+
+    checkUrl: function(url) {
+      var self = this,
+      crt = url || self.getCrtUrl();
+
+      if (crt == self.current) return false;
+
+      //当url不一样时，就更新它
+      self.current = crt;
+      self.loadUrl(crt);
+    },
+
+    //判断当前location是否具有符合格式的hashtag
+    //如有，则根据此hash跳转到真实URL
+    locCheck: function() {
+      var loc = win.location;
+      if (loc.hash.indexOf(HASH_LEAD) == -1) return;
+      loc.href = this.current;
+    }
+  });
+
+  CuteLink.history = new CuteLink.History();
+
+  CuteLink.history.start();
+});
 KISSY.add('cutelink/register', function(S, undefined) {
   var win = window,
   doc = document,

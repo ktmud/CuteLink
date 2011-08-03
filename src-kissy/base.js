@@ -1,7 +1,7 @@
 /**
-* CuteLink v{#VERSION}
+* CuteLink v@VERSION
 *
-* Date: {#DATE}
+* Date: @DATE
 *
 * Copyright given up 2011, Jianchao Yang.
 *
@@ -13,19 +13,19 @@
 (function(S) {
   S.mix(S, {
     /**
-    * @param {array} funs ĞèÒªÖ´ĞĞµÄº¯Êı£¬Ò»¸öÎÄ±¾Êı×é.
-    * @param {object} context º¯ÊıÉÏÏÂÎÄ.
+    * @param {array} funs éœ€è¦æ‰§è¡Œçš„å‡½æ•°ï¼Œä¸€ä¸ªæ–‡æœ¬æ•°ç»„.
+    * @param {object} context å‡½æ•°ä¸Šä¸‹æ–‡.
     */
     _invoke: function(funs, context) {
       if (funs)
         for (var i = 0; i < funs.length; i++)
         try {
           (new Function(funs[i])).apply(context);
-          _log(funs[i] + 'ÒÑ´¥·¢');
+          _log(funs[i] + 'å·²è§¦å‘');
         } catch (a) {}
     },
     /**
-    * Ö»ÓĞÔÚ¿ª·¢Ä£Ê½ÏÂ£¬²ÅÊä³öµ÷ÊÔĞÅÏ¢
+    * åªæœ‰åœ¨å¼€å‘æ¨¡å¼ä¸‹ï¼Œæ‰è¾“å‡ºè°ƒè¯•ä¿¡æ¯
     */
     _log: function() {
       if (window._DEV_) S.log.apply(S, arguments);
@@ -37,28 +37,28 @@ KISSY.add('cutelink', function(S) {
   var _DATA = 'data',
   _PARAMS = 'params';
 
-  //CuteLinkÓ¦ÓÃ¹¹ÔìÆ÷
+  //CuteLinkåº”ç”¨æ„é€ å™¨
   function CuteLink() {
     var self = this;
 
     S.mix(self, {
       _inited: false,
-      camps: {}, //Í¨¹ıregister·½·¨×¢²áµÄÊµÀı
-      callbacks: {} //È«¾Ö»Øµ÷º¯Êı£¬·½±ã¸÷¸öÊµÀıµ÷ÓÃ
+      camps: {}, //é€šè¿‡registeræ–¹æ³•æ³¨å†Œçš„å®ä¾‹
+      callbacks: {} //å…¨å±€å›è°ƒå‡½æ•°ï¼Œæ–¹ä¾¿å„ä¸ªå®ä¾‹è°ƒç”¨
     });
 
     return self;
   }
 
-  //È«¾ÖĞÔµÄ²ÎÊı»º´æ
+  //å…¨å±€æ€§çš„å‚æ•°ç¼“å­˜
   S.mix(CuteLink, {
-    camps: [], //°´ÕÕ³õÊ¼»¯Ë³Ğò¼·ÈëµÄCuteCamp
-    data: {}, //»ùÓÚurlµÄÊı¾İ»º´æ
-    params: {} //»ùÓÚÂ·¾¶µÄurl²ÎÊı»º´æ
+    camps: [], //æŒ‰ç…§åˆå§‹åŒ–é¡ºåºæŒ¤å…¥çš„CuteCamp
+    data: {}, //åŸºäºurlçš„æ•°æ®ç¼“å­˜
+    params: {} //åŸºäºè·¯å¾„çš„urlå‚æ•°ç¼“å­˜
   });
 
   S.augment(CuteLink, S.EventTarget, {
-    //Çå¿Õ»º´æ
+    //æ¸…ç©ºç¼“å­˜
     clear: function(cachekeys) {
       if (S.isArray(cachekeys)) {
         S.each(cachekeys, function(key) {
@@ -69,29 +69,29 @@ KISSY.add('cutelink', function(S) {
       }
     },
 
-    //Òª¿ªÊ¼Ê¹ÓÃcutelink ±ØĞëÏÈÖ´ĞĞinit²Ù×÷
+    //è¦å¼€å§‹ä½¿ç”¨cutelink å¿…é¡»å…ˆæ‰§è¡Œinitæ“ä½œ
     init: function(conf) {
       var self = this;
 
-      //Ö§³Ö¸Ä±äÅäÖÃÏîºóÔÙ¶È³õÊ¼»¯
+      //æ”¯æŒæ”¹å˜é…ç½®é¡¹åå†åº¦åˆå§‹åŒ–
       if (self._inited && !conf) return self;
 
       var conf = S.mix({
-        //ÊÇ·ñĞèÒª¸ù¾İURL hashÌø×ª
+        //æ˜¯å¦éœ€è¦æ ¹æ®URL hashè·³è½¬
         doRedirect: true
       }, conf);
 
-      //¼ÇÂ¼ÏÂµ±Ç°µÄÂ·¾¶¡¢²ÎÊıºÍhashtag
+      //è®°å½•ä¸‹å½“å‰çš„è·¯å¾„ã€å‚æ•°å’Œhashtag
       var initialUrl = window.location.href,
       crtLocParam = initialParam = CuteLink.getLocParam(),
       crtLocPath = CuteLink.getUrlPath(initialUrl);
 
-      //´æ´¢µ±Ç°µØÖ·µÄÕæÊµ²ÎÊı
-      //²»ÄÜ´æÔÚ self Àï
+      //å­˜å‚¨å½“å‰åœ°å€çš„çœŸå®å‚æ•°
+      //ä¸èƒ½å­˜åœ¨ self é‡Œ
       CuteLink[_PARAMS][crtLocPath] = crtLocParam;
 
       var oninit = conf.oninit;
-      //Èç¹ûÒªÌø×ª´øhashµÄurl ²¢ÇÒÎ´Ö¸¶¨³õÊ¼»¯Ö´ĞĞµÄÊÂ¼ş
+      //å¦‚æœè¦è·³è½¬å¸¦hashçš„url å¹¶ä¸”æœªæŒ‡å®šåˆå§‹åŒ–æ‰§è¡Œçš„äº‹ä»¶
       if (conf.doRedirect && !oninit) {
         CuteLink.history.locCheck();
       } else if (S.isFunction(oninit)) {

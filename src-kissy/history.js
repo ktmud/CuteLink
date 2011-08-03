@@ -13,7 +13,7 @@ KISSY.add('cutelink/history', function(S, undefined) {
   _hasPushState = !!(win.history && win.history.pushState);
 
   CuteLink.History = function() {
-    //Ò»¸öurl ¶ÔÓ¦ÕâÏîÊı¾İµÄµ÷ÓÃ¶ÔÏó
+    //ä¸€ä¸ªurl å¯¹åº”è¿™é¡¹æ•°æ®çš„è°ƒç”¨å¯¹è±¡
     this.handlers = {};
   };
 
@@ -27,12 +27,12 @@ KISSY.add('cutelink/history', function(S, undefined) {
   }
 
   S.augment(CuteLink.History, S.EventTarget, {
-    //»ñÈ¡µ±Ç°µÄÕæÊµµØÖ·
+    //è·å–å½“å‰çš„çœŸå®åœ°å€
     getCrtUrl: function() {
       return CuteLink.getCleanUrl(win.location.href);
     },
 
-    //°ó¶¨
+    //ç»‘å®š
     start: function() {
       var self = this;
 
@@ -44,7 +44,7 @@ KISSY.add('cutelink/history', function(S, undefined) {
       //oldIE = (S.UA.ie < 8);
 
       //if (oldIE) {
-      ////´´½¨iframeÀ´±£³Ö×´Ì¬
+      ////åˆ›å»ºiframeæ¥ä¿æŒçŠ¶æ€
       //var iframe = D.create('<iframe style="position: absolute; left: -999px; top: -999px; visibility: hidden;" height="20" scroll="yes" src="javascript:0" tabindex="-1" />');
       //document.body.appendChild(iframe);
       //self.iframe = iframe.contentWindow;
@@ -52,7 +52,7 @@ KISSY.add('cutelink/history', function(S, undefined) {
       //var frameDoc = self.iframe.document;
 
       //frameDoc.open();
-      ////°ó¶¨iframe ÄÚ´°¿ÚµÄ scrollÊÂ¼ş
+      ////ç»‘å®šiframe å†…çª—å£çš„ scrolläº‹ä»¶
       //frameDoc.write('<html><body><style> div { height: 20px; overflow: hidden; } </style><div></div><script> window.onscroll = function() { try { var hist = parent.window.KISSY.CuteLink.history, elems = document.getElementsByTagName("div"), i = Math.floor(document.body.scrollTop / 20), url = elems[i].id; if (!url) return; hist.setHash(url, 1); hist.checkurl(url); } catch (e) {} } </script></body></html>');
       //frameDoc.close();
 
@@ -63,7 +63,7 @@ KISSY.add('cutelink/history', function(S, undefined) {
       } else if ('onhashchange' in window) {
         E.on(win, 'hashchange', function() { self.checkUrl(); });
       } else {
-        //¶¨Ê±¼ì²éhash±ä¸ü
+        //å®šæ—¶æ£€æŸ¥hashå˜æ›´
         //S.later(self.checkUrl, 50, true, self);
       }
 
@@ -71,41 +71,41 @@ KISSY.add('cutelink/history', function(S, undefined) {
       self._hasPushState = _hasPushState;
     },
 
-    //¶Ô²»Ö§³ÖpushStateµÄä¯ÀÀÆ÷£¬ÉèÖÃlocation.hash (²¢Ö´ĞĞÔØÈë)
+    //å¯¹ä¸æ”¯æŒpushStateçš„æµè§ˆå™¨ï¼Œè®¾ç½®location.hash (å¹¶æ‰§è¡Œè½½å…¥)
     setHash: function(url, fromFrame) {
       var self = this;
       //iframe = self.iframe;
 
-      //¶Ô²»Ö§³ÖhashchangeµÄÒ³Ãæ£¬ÉèÖÃiframe hashÀ´±£´æÀúÊ·
+      //å¯¹ä¸æ”¯æŒhashchangeçš„é¡µé¢ï¼Œè®¾ç½®iframe hashæ¥ä¿å­˜å†å²
       //if (iframe && !fromFrame) {
       //var frameDoc = iframe.document,
       //tagger = frameDoc.createElement('div');
 
       //tagger.id = url;
 
-      ////ÏÈÉèÖÃlocation ÔÙ¹ö¶¯
+      ////å…ˆè®¾ç½®location å†æ»šåŠ¨
       //frameDoc.location.hash = url;
 
       //frameDoc.body.appendChild(tagger);
 
       //}
 
-      //±ä¸üµ±Ç°µØÖ·À¸
+      //å˜æ›´å½“å‰åœ°å€æ 
       setLocHash(url);
     },
 
     navigate: function(url, trigger, evtData) {
       var self = this;
 
-      //Èç¹ûÖ¸¶¨ÁËÊÇË­´¥·¢µÄ´ËÊÂ¼ş
-      //´æÈëhandlers»º´æ
+      //å¦‚æœæŒ‡å®šäº†æ˜¯è°è§¦å‘çš„æ­¤äº‹ä»¶
+      //å­˜å…¥handlersç¼“å­˜
       if (trigger) {
         self.prevHandler = self.handlers[url] = [trigger, evtData];
       }
 
-      //Èç¹ûÓĞwindow.history.pushState·½·¨ Ôò pushState
-      //Èç¹ûÃ»ÓĞ£¬ÔòÓÃ url hash ´¦Àí
-      // title ºÍ state Öµ»ù±¾ÉÏÊ±Ã»ÓÃµÄ
+      //å¦‚æœæœ‰window.history.pushStateæ–¹æ³• åˆ™ pushState
+      //å¦‚æœæ²¡æœ‰ï¼Œåˆ™ç”¨ url hash å¤„ç†
+      // title å’Œ state å€¼åŸºæœ¬ä¸Šæ—¶æ²¡ç”¨çš„
       if (self._hasPushState) {
         win.history.pushState(null, null, url);
       } else {
@@ -115,12 +115,12 @@ KISSY.add('cutelink/history', function(S, undefined) {
       self.checkUrl(url);
     },
 
-    //¸ù¾İÒÑÓĞµÄurlÔØÈëÄ³µØÖ·
+    //æ ¹æ®å·²æœ‰çš„urlè½½å…¥æŸåœ°å€
     loadUrl: function(url) {
       var handler = this.handlers[url], trigger, evtData;
 
-      //Ä¬ÈÏ¸ù¾İurlÈ¡trigger
-      //Èç¹ûÈ¡²»µ½£¬ÔòÓÃÉÏÒ»¸ötriggerÀ´ÔØÈëµ±Ç°url
+      //é»˜è®¤æ ¹æ®urlå–trigger
+      //å¦‚æœå–ä¸åˆ°ï¼Œåˆ™ç”¨ä¸Šä¸€ä¸ªtriggeræ¥è½½å…¥å½“å‰url
       if (handler) {
         trigger = handler[0];
         evtData = handler[1];
@@ -129,15 +129,15 @@ KISSY.add('cutelink/history', function(S, undefined) {
         trigger = (handler && handler[0]) || CuteLink.defaultCamp;
       }
 
-      //Èç¹ûÖ¸¶¨ÁËevtData Ê¹ÓÃevtDataÀ´¼ÓÔØ
+      //å¦‚æœæŒ‡å®šäº†evtData ä½¿ç”¨evtDataæ¥åŠ è½½
       if (evtData) {
-        //data´Ócutelink»º´æÀïÖØĞÂÈ¡
+        //dataä»cutelinkç¼“å­˜é‡Œé‡æ–°å–
         evtData.data = CuteLink.data[url];
         evtData.hasCache = !S.isUndefined(evtData.data);
         trigger.doRequest(evtData);
       } else if (trigger) {
-        //·ñÔòÖ±½Óload url
-        //Ö±½ÓloadµÄ½á¹ûÊÇ²»ÖªµÀÕâ´ÎloadÊÇÓÉÊ²Ã´²Ù×÷Ëù´¥·¢
+        //å¦åˆ™ç›´æ¥load url
+        //ç›´æ¥loadçš„ç»“æœæ˜¯ä¸çŸ¥é“è¿™æ¬¡loadæ˜¯ç”±ä»€ä¹ˆæ“ä½œæ‰€è§¦å‘
         trigger.load(url);
       }
     },
@@ -148,13 +148,13 @@ KISSY.add('cutelink/history', function(S, undefined) {
 
       if (crt == self.current) return false;
 
-      //µ±url²»Ò»ÑùÊ±£¬¾Í¸üĞÂËü
+      //å½“urlä¸ä¸€æ ·æ—¶ï¼Œå°±æ›´æ–°å®ƒ
       self.current = crt;
       self.loadUrl(crt);
     },
 
-    //ÅĞ¶Ïµ±Ç°locationÊÇ·ñ¾ßÓĞ·ûºÏ¸ñÊ½µÄhashtag
-    //ÈçÓĞ£¬Ôò¸ù¾İ´ËhashÌø×ªµ½ÕæÊµURL
+    //åˆ¤æ–­å½“å‰locationæ˜¯å¦å…·æœ‰ç¬¦åˆæ ¼å¼çš„hashtag
+    //å¦‚æœ‰ï¼Œåˆ™æ ¹æ®æ­¤hashè·³è½¬åˆ°çœŸå®URL
     locCheck: function() {
       var loc = win.location;
       if (loc.hash.indexOf(HASH_LEAD) == -1) return;

@@ -7,17 +7,17 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
   Q_MARK = '?', COMMA = ',',
   _UNPARAM = 'unparam', _PARAM = 'param';
 
-  //¸ù¾İµ±Ç°µÄ location ·µ»Ø²ÎÊı¶ÔÏó
+  //æ ¹æ®å½“å‰çš„ location è¿”å›å‚æ•°å¯¹è±¡
   function getLocParam() {
     return S[_UNPARAM](win.location.search.replace(Q_MARK, BLANK));
   }
 
-  //»ñÈ¡locationÖĞµÄhash (²»´ø#)
+  //è·å–locationä¸­çš„hash (ä¸å¸¦#)
   function getLocHash() {
     return win.location.hash.replace(HASH_LEAD, BLANK);
   }
 
-  //»ñÈ¡Ä³ÌØ¶¨urlµÄhashtag (²»´ø#)
+  //è·å–æŸç‰¹å®šurlçš„hashtag (ä¸å¸¦#)
   function getUrlHash(url) {
     if (PAT_HASH.test(url)) {
       return url.match(PAT_HASH)[0].replace(HASH_LEAD, BLANK);
@@ -26,7 +26,7 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     }
   }
 
-  //»ñÈ¡urlÖĞ ?... µÄ²¿·Ö
+  //è·å–urlä¸­ ?... çš„éƒ¨åˆ†
   function getUrlSearch(url) {
     if (PAT_SEARCH.test(url)) {
       return url.match(PAT_SEARCH)[1];
@@ -35,8 +35,8 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     }
   }
 
-  //»ñÈ¡urlÖĞ ? Ö®Ç°µÄ²¿·Ö
-  //Èç¹ûurlµÄhostºÍµ±Ç°µØÖ·Ò»Ñù£¬»á±»Ìæ»»³ÉÏà¶ÔµØÖ·
+  //è·å–urlä¸­ ? ä¹‹å‰çš„éƒ¨åˆ†
+  //å¦‚æœurlçš„hostå’Œå½“å‰åœ°å€ä¸€æ ·ï¼Œä¼šè¢«æ›¿æ¢æˆç›¸å¯¹åœ°å€
   function getUrlPath(url) {
     var loc = win.location;
     return url.replace(PAT_SEARCH, BLANK).replace(PAT_HASH, BLANK)
@@ -45,20 +45,20 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
 
 
   /**
-  * ×ÛºÏurlÖĞµÄhashtagºÍsearch²¿·Ö£¬»ñÈ¡ËüËù´ú±íµÄÊµ¼Ê²ÎÊı
+  * ç»¼åˆurlä¸­çš„hashtagå’Œsearchéƒ¨åˆ†ï¼Œè·å–å®ƒæ‰€ä»£è¡¨çš„å®é™…å‚æ•°
   *
-  * Èç¹ûhash°üº¬Â·¾¶ĞÅÏ¢£¬
-  * Ôò·µ»ØÕæÊµÂ·¾¶ºÍÕæÊµ²ÎÊı
-  * hashtagÖ®Ç°µÄ²ÎÊı»á±»ºöÂÔ
+  * å¦‚æœhashåŒ…å«è·¯å¾„ä¿¡æ¯ï¼Œ
+  * åˆ™è¿”å›çœŸå®è·¯å¾„å’ŒçœŸå®å‚æ•°
+  * hashtagä¹‹å‰çš„å‚æ•°ä¼šè¢«å¿½ç•¥
   */
   function getUrlDetail(url) {
-    //Èç¹ûµ±Ç°°üº¬ #!
+    //å¦‚æœå½“å‰åŒ…å« #!
     var m = url.match(PAT_URL),
     host_and_path = m[1],
-    search_f = m[2], //´ø ?
-    search = m[3] || '', //²»´ø ?
-    hash_f = m[4], //´ø # »ò #!
-    hash = m[5], //²»´ø #!
+    search_f = m[2], //å¸¦ ?
+    search = m[3] || '', //ä¸å¸¦ ?
+    hash_f = m[4], //å¸¦ # æˆ– #!
+    hash = m[5], //ä¸å¸¦ #!
     searchParam = S[_UNPARAM](search),
     hashParam = {},
     path = getUrlPath(url) || getUrlPath(win.location.href),
@@ -66,18 +66,18 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
 
     var param = searchParam;
 
-    //Èç¹ûÊÇ´ø²ÎÊı¸ñÊ½µÄhash
+    //å¦‚æœæ˜¯å¸¦å‚æ•°æ ¼å¼çš„hash
     if (hash_f && hash_f.indexOf(HASH_LEAD) == 0) {
-      //Èç¹ûHASHÖĞº¬ÓĞÂ·¾¶ĞÅÏ¢
+      //å¦‚æœHASHä¸­å«æœ‰è·¯å¾„ä¿¡æ¯
       if (hash.indexOf(SLASH) != -1 || hash.indexOf(Q_MARK) > 0) {
-        //[ÖØĞÂ]½øĞĞurlÆ¥Åä
+        //[é‡æ–°]è¿›è¡ŒurlåŒ¹é…
         var m = hash.match(PAT_URL);
-        //»ñµÃÕæÊµÂ·¾¶
+        //è·å¾—çœŸå®è·¯å¾„
         realPath = m[1];
-        //ÕæÊµµÄ²éÑ¯²ÎÊı
+        //çœŸå®çš„æŸ¥è¯¢å‚æ•°
         param = S[_UNPARAM](m[3]);
       } else {
-        //ĞèÒªµÄparamÎªhashÖĞµÄparam
+        //éœ€è¦çš„paramä¸ºhashä¸­çš„param
         param = S[_UNPARAM](hash);
       }
     }
@@ -95,8 +95,8 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     };
   }
 
-  //»ñÈ¡Ò»¸ö¿ÉÄÜ´æÔÚhashtagµÄurlµÄÕæÊµµØÖ·
-  //¿ÉÒÔÖ±½Ó´«Èë getUrlDetail µÃµ½µÄ¶ÔÏó
+  //è·å–ä¸€ä¸ªå¯èƒ½å­˜åœ¨hashtagçš„urlçš„çœŸå®åœ°å€
+  //å¯ä»¥ç›´æ¥ä¼ å…¥ getUrlDetail å¾—åˆ°çš„å¯¹è±¡
   function getCleanUrl(p, forceParamObj) {
     if (S.isString(p)) {
       p = getUrlDetail(p);
@@ -107,10 +107,10 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
 
     if (!forceParamObj && hash_f && hash_f.indexOf(HASH_LEAD) == 0) {
       if (hash.indexOf(SLASH) != -1 || hash.indexOf(Q_MARK) > 0) {
-        //Èç¹ûhash°üº¬Â·¾¶ĞÅÏ¢£¬Ö±½ÓÓÃurl hash
+        //å¦‚æœhashåŒ…å«è·¯å¾„ä¿¡æ¯ï¼Œç›´æ¥ç”¨url hash
         return hash;
       } else {
-        //·ñÔò½«hash×÷Îª²ÎÊı
+        //å¦åˆ™å°†hashä½œä¸ºå‚æ•°
         return p.path + Q_MARK + hash;
       }
     }
@@ -118,7 +118,7 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     return p.path + Q_MARK + decodeURI(S[_PARAM](p.param));
   }
 
-  //ºÏ²¢É¾³ı²ÎÊı
+  //åˆå¹¶åˆ é™¤å‚æ•°
   function mergeParam(param, adds, removes) {
     if (S.isObject(adds)) {
       S.mix(param, adds);
@@ -131,7 +131,7 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     return param;
   }
 
-  //»ù±¾µÄUrl´¦Àíº¯Êı£¬×÷ÎªCuteLinkµÄ¾²Ì¬·½·¨
+  //åŸºæœ¬çš„Urlå¤„ç†å‡½æ•°ï¼Œä½œä¸ºCuteLinkçš„é™æ€æ–¹æ³•
   S.mix(S.CuteLink, {
     getLocParam: getLocParam,
     getLocHash: getLocHash,
@@ -143,16 +143,16 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     mergeParam: mergeParam,
 
     /**
-    * ¸ù¾İ²ÎÊıcacheºÍÄ¿±êURL£¬
-    * Éú³ÉÕæÕıĞèÒªµÄµØÖ·ºÍ²ÎÊı
-    * Í¬Ê±¸ºÔğ¸üĞÂ²ÎÊıcache
-    * @param {string} url Ä¿±êurl.
+    * æ ¹æ®å‚æ•°cacheå’Œç›®æ ‡URLï¼Œ
+    * ç”ŸæˆçœŸæ­£éœ€è¦çš„åœ°å€å’Œå‚æ•°
+    * åŒæ—¶è´Ÿè´£æ›´æ–°å‚æ•°cache
+    * @param {string} url ç›®æ ‡url.
     */
     makeRealQuery: function(url) {
       var crtLocPath = getUrlPath(win.location.href),
       path = getUrlPath(url) || crtLocPath;
 
-      //¶ÔÓÚÃ»ÓĞ¼üÖµ¶ÔµÄURL£¬²»´¦Àí
+      //å¯¹äºæ²¡æœ‰é”®å€¼å¯¹çš„URLï¼Œä¸å¤„ç†
       if (!PAT_SEARCH.test(url)) {
         return {
           realPath: url,
@@ -165,23 +165,23 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
       to = getUrlDetail(url),
       toParam = to[_PARAM],
       toPath = to.realPath,
-      //´ÓcacheÀï»ñµÃµ±Ç°Â·¾¶µÄÕæÊµ²ÎÊı
+      //ä»cacheé‡Œè·å¾—å½“å‰è·¯å¾„çš„çœŸå®å‚æ•°
       cachedParam = pcache[toPath];
 
 
       if (cachedParam) {
-        //¶ÔÓÚµ±Ç°ÒÑÓĞµÄ²ÎÊı
+        //å¯¹äºå½“å‰å·²æœ‰çš„å‚æ•°
         for (var i in cachedParam) {
-          //Èç¹ûÄ¿±ê²ÎÊıÖĞÃ»ÓĞ£¬¿ÉÓÃÖ±½ÓÅ×Æú
+          //å¦‚æœç›®æ ‡å‚æ•°ä¸­æ²¡æœ‰ï¼Œå¯ç”¨ç›´æ¥æŠ›å¼ƒ
           if (!toParam[i]) {
             delete cachedParam[i];
           }
         }
-        //¶ÔÓÚÄ¿±êURIÖĞµÄ²ÎÊı
+        //å¯¹äºç›®æ ‡URIä¸­çš„å‚æ•°
         for (var i in toParam) {
-          //Èç¹ûµ±Ç°²ÎÊıÖĞÃ»ÓĞ£¬
-          //»òÕßµ±Ç°²ÎÊıÖĞµÄÖµºÍÄ¿±êÖµ²»Ò»Ñù
-          //ĞèÒª¸üĞÂµ±Ç°²ÎÊı
+          //å¦‚æœå½“å‰å‚æ•°ä¸­æ²¡æœ‰ï¼Œ
+          //æˆ–è€…å½“å‰å‚æ•°ä¸­çš„å€¼å’Œç›®æ ‡å€¼ä¸ä¸€æ ·
+          //éœ€è¦æ›´æ–°å½“å‰å‚æ•°
           if (!cachedParam[i] || cachedParam[i] != toParam[i]) {
             cachedParam[i] = toParam[i];
           }
@@ -191,7 +191,7 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
         cachedParam = pcache[toPath] = toParam;
       }
 
-      //¶Ô²ÎÊı½øĞĞÅÅĞò£¬·ÀÖ¹¶à¸ö²»Í¬µØÖ·¶ÔÓ¦Í¬ÑùÇëÇó
+      //å¯¹å‚æ•°è¿›è¡Œæ’åºï¼Œé˜²æ­¢å¤šä¸ªä¸åŒåœ°å€å¯¹åº”åŒæ ·è¯·æ±‚
       cachedParam = sortObj(cachedParam);
 
       var fullUrl = toPath + Q_MARK + decodeURI(S[_PARAM](cachedParam));

@@ -22,13 +22,13 @@ CL = ${DIST_DIR}/cutelink.js
 CL_MIN = ${DIST_DIR}/cutelink-min.js
 
 CL_VER = $(shell cat version.txt)
-VER = sed "s/{#VERSION}/${CL_VER}/"
+VER = sed "s/@VERSION/${CL_VER}/"
 
 DATE=$(shell git log -1 --pretty=format:%ad)
 
 all: core
 
-core: cutelink min lint
+core: cutelink min
 	@@echo "cutelink build complete."
 
 ${DIST_DIR}:
@@ -40,8 +40,7 @@ ${CL}: ${MODULES} | ${DIST_DIR}
 	@@echo "Building" ${CL}
 
 	@@cat ${MODULES} | \
-		sed 's/{#DATE}/'"${DATE}"'/' | \
-		#VER is a command to update version
+		sed 's/@DATE/'"${DATE}"'/' | \
 		${VER} > ${CL};
 
 min: cutelink ${CL_MIN}
@@ -52,9 +51,9 @@ ${CL_MIN}: ${CL}
 		${COMPILER} ${CL} > ${CL_MIN}.tmp; \
 		${POST_COMPILER} ${CL_MIN}.tmp > ${CL_MIN}; \
 		rm -f ${CL_MIN}.tmp; \
-		else \
+	else \
 		echo "You must have NodeJS installed in order to do the minify."; \
-		fi
+	fi
 
 clean:
 	@@echo "Removing Distribution directory:" ${DIST_DIR}
@@ -63,4 +62,4 @@ clean:
 pull:
 	@@git pull ${REMOTE} ${BRANCH}
 
-.PHONY: all jquery min clean pull core
+.PHONY: all cutelink min clean pull core
