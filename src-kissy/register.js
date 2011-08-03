@@ -1,3 +1,6 @@
+/**
+* register, event hanndle, all in one.
+*/
 KISSY.add('cutelink/register', function(S, undefined) {
   var win = window,
   doc = document,

@@ -8,9 +8,8 @@
 * You can do whatever you want with this.
 *
 */
-
-//Extend KISSY
 (function(S) {
+  //Extend KISSY
   S.mix(S, {
     /**
     * @param {array} funs 需要执行的函数，一个文本数组.

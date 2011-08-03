@@ -1,3 +1,5 @@
+
+// to parse, merge and save url parameters.
 KISSY.add('cutelink/urltools', function(S, undefined) {
   var win = window,
   PAT_SEARCH = /\?(\w[^#]+)/,

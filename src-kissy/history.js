@@ -1,3 +1,14 @@
+/**
+* [History Manager]
+*
+* to set location.href and make history.
+*
+* need config.pushState to be true when register a new basecamp.
+*
+* TODO: IE6, IE7 support.
+* could've used iframe, but too tricky and unstable.
+*
+*/
 KISSY.add('cutelink/history', function(S, undefined) {
   var win = window,
   doc = document,
@@ -162,6 +173,7 @@ KISSY.add('cutelink/history', function(S, undefined) {
     }
   });
 
+  //start a new history manager instance.
   CuteLink.history = new CuteLink.History();
 
   CuteLink.history.start();
