@@ -9,9 +9,8 @@ BUILD_DIR = build
 PREFIX = .
 DIST_DIR = ${PREFIX}/dist
 
-JS_ENGINE ?= `which node nodejs`
-COMPILER = ${JS_ENGINE} ${BUILD_DIR}/uglify.js --unsafe
-POST_COMPILER = ${JS_ENGINE} ${BUILD_DIR}/post-compile.js
+JS_ENGINE ?= `which node`
+COMPILER = ${JS_ENGINE} ${BUILD_DIR}/uglifyjs --unsafe --ascii
 
 MODULES = ${SRC_DIR}/base.js\
 					${SRC_DIR}/urltools.js\
@@ -24,7 +23,7 @@ CL_MIN = ${DIST_DIR}/cutelink-min.js
 CL_VER = $(shell cat version.txt)
 VER = sed "s/@VERSION/${CL_VER}/"
 
-DATE=$(shell git log -1 --pretty=format:%ad)
+DATE = $(shell git log -1 --pretty=format:%ad)
 
 all: core
 
@@ -47,12 +46,10 @@ min: cutelink ${CL_MIN}
 
 ${CL_MIN}: ${CL}
 	@@if test ! -z ${JS_ENGINE}; then \
-		echo "Minifying Cutelink" ${CL_MIN}; \
-		${COMPILER} ${CL} > ${CL_MIN}.tmp; \
-		${POST_COMPILER} ${CL_MIN}.tmp > ${CL_MIN}; \
-		rm -f ${CL_MIN}.tmp; \
+		echo "Minifying cutelink" ${CL_MIN}; \
+		${COMPILER} -o ${CL_MIN} ${CL}; \
 	else \
-		echo "You must have NodeJS installed in order to do the minify."; \
+		echo "You must have NodeJS installed in order to minify cutelink."; \
 	fi
 
 clean:

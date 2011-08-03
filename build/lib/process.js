@@ -339,16 +339,17 @@ Scope.prototype = {
                         return m;
                 }
         },
+        set_mangle: function(name, m) {
+                this.rev_mangled[m] = name;
+                return this.mangled[name] = m;
+        },
         get_mangled: function(name, newMangle) {
                 if (this.uses_eval || this.uses_with) return name; // no mangle if eval or with is in use
                 var s = this.has(name);
                 if (!s) return name; // not in visible scope, no mangle
                 if (HOP(s.mangled, name)) return s.mangled[name]; // already mangled in this scope
                 if (!newMangle) return name;                      // not found and no mangling requested
-
-                var m = s.next_mangled();
-                s.rev_mangled[m] = name;
-                return s.mangled[name] = m;
+                return s.set_mangle(name, s.next_mangled());
         },
         define: function(name) {
                 if (name != null)
@@ -468,30 +469,43 @@ function ast_mangle(ast, options) {
         };
 
         function get_define(name) {
-                // we always lookup a defined symbol for the current scope FIRST, so declared
-                // vars trump a DEFINE symbol, but if no such var is found, then match a DEFINE value
-                if (!scope.has(name)) {
-                    if (HOP(options.defines, name)) {
-                        return options.defines[name];
-                    }
+                if (options.defines) {
+                        // we always lookup a defined symbol for the current scope FIRST, so declared
+                        // vars trump a DEFINE symbol, but if no such var is found, then match a DEFINE value
+                        if (!scope.has(name)) {
+                                if (HOP(options.defines, name)) {
+                                        return options.defines[name];
+                                }
+                        }
+                        return null;
                 }
-                return null;
         };
 
         function _lambda(name, args, body) {
-                var is_defun = this[0] == "defun";
-                if (is_defun && name) name = get_mangled(name);
+                var is_defun = this[0] == "defun", extra;
+                if (name) {
+                        if (is_defun) name = get_mangled(name);
+                        else {
+                                extra = {};
+                                if (!(scope.uses_eval || scope.uses_with))
+                                        name = extra[name] = scope.next_mangled();
+                                else
+                                        extra[name] = name;
+                        }
+                }
                 body = with_scope(body.scope, function(){
-                        if (!is_defun && name) name = get_mangled(name);
                         args = MAP(args, function(name){ return get_mangled(name) });
                         return MAP(body, walk);
-                });
+                }, extra);
                 return [ this[0], name, args, body ];
         };
 
-        function with_scope(s, cont) {
+        function with_scope(s, cont, extra) {
                 var _scope = scope;
                 scope = s;
+                if (extra) for (var i in extra) if (HOP(extra, i)) {
+                        s.set_mangle(i, extra[i]);
+                }
                 for (var i in s.names) if (HOP(s.names, i)) {
                         get_mangled(i, true);
                 }
@@ -709,7 +723,7 @@ var when_constant = (function(){
                                                 (expr[1] == "||" && (lval ? lval    : expr[3])) ||
                                                 expr);
                                     } catch(ex2) {
-                                        // IGNORE... lval is not constant 
+                                        // IGNORE... lval is not constant
                                     }
                                 }
                                 return no ? no.call(expr, expr) : null;
@@ -723,6 +737,90 @@ var when_constant = (function(){
 function warn_unreachable(ast) {
         if (!empty(ast))
                 warn("Dropping unreachable code: " + gen_code(ast, true));
+};
+
+function prepare_ifs(ast) {
+        var w = ast_walker(), walk = w.walk;
+        // In this first pass, we rewrite ifs which abort with no else with an
+        // if-else.  For example:
+        //
+        // if (x) {
+        //     blah();
+        //     return y;
+        // }
+        // foobar();
+        //
+        // is rewritten into:
+        //
+        // if (x) {
+        //     blah();
+        //     return y;
+        // } else {
+        //     foobar();
+        // }
+        function redo_if(statements) {
+                statements = MAP(statements, walk);
+
+                for (var i = 0; i < statements.length; ++i) {
+                        var fi = statements[i];
+                        if (fi[0] != "if") continue;
+
+                        if (fi[3] && walk(fi[3])) continue;
+
+                        var t = walk(fi[2]);
+                        if (!aborts(t)) continue;
+
+                        var conditional = walk(fi[1]);
+
+                        var e_body = statements.slice(i + 1);
+                        var e;
+                        if (e_body.length == 1) e = e_body[0];
+                        else e = [ "block", e_body ];
+
+                        var ret = statements.slice(0, i).concat([ [
+                                fi[0],          // "if"
+                                conditional,    // conditional
+                                t,              // then
+                                e               // else
+                        ] ]);
+
+                        return redo_if(ret);
+                }
+
+                return statements;
+        };
+
+        function redo_if_lambda(name, args, body) {
+                body = redo_if(body);
+                return [ this[0], name, args.slice(), body ];
+        };
+
+        function redo_if_block(statements) {
+                var out = [ this[0] ];
+                if (statements != null)
+                        out.push(redo_if(statements));
+                return out;
+        };
+
+        return w.with_walkers({
+                "defun": redo_if_lambda,
+                "function": redo_if_lambda,
+                "block": redo_if_block,
+                "splice": redo_if_block,
+                "toplevel": function(statements) {
+                        return [ this[0], redo_if(statements) ];
+                },
+                "try": function(t, c, f) {
+                        return [
+                                this[0],
+                                redo_if(t),
+                                c != null ? [ c[0], redo_if(c[1]) ] : null,
+                                f != null ? redo_if(f) : null
+                        ];
+                }
+        }, function() {
+                return walk(ast);
+        });
 };
 
 function ast_squeeze(ast, options) {
@@ -972,6 +1070,9 @@ function ast_squeeze(ast, options) {
                 });
         };
 
+        ast = prepare_ifs(ast);
+        ast = ast_add_scope(ast);
+
         return w.with_walkers({
                 "sub": function(expr, subscript) {
                         if (subscript[0] == "string") {
@@ -1052,10 +1153,9 @@ function ast_squeeze(ast, options) {
                                 return [ "array", args ];
                         }
                 },
-                "while": _do_while,
-                "do": _do_while
+                "while": _do_while
         }, function() {
-                return walk(ast_add_scope(ast));
+                return walk(ast);
         });
 };
 
@@ -1111,7 +1211,8 @@ function gen_code(ast, options) {
                 quote_keys   : false,
                 space_colon  : false,
                 beautify     : false,
-                ascii_only   : false
+                ascii_only   : false,
+                inline_script: false
         });
         var beautify = !!options.beautify;
         var indentation = 0,
@@ -1119,7 +1220,10 @@ function gen_code(ast, options) {
             space = beautify ? " " : "";
 
         function encode_string(str) {
-                return make_string(str, options.ascii_only);
+                var ret = make_string(str, options.ascii_only);
+                if (options.inline_script)
+                        ret = ret.replace(/<\x2fscript([>/\t\n\f\r ])/gi, "<\\/script$1");
+                return ret;
         };
 
         function make_name(name) {
@@ -1375,6 +1479,10 @@ function gen_code(ast, options) {
                             !(rvalue[1] == operator && member(operator, [ "&&", "||", "*" ]))) {
                                 right = "(" + right + ")";
                         }
+                        else if (!beautify && options.inline_script && (operator == "<" || operator == "<<")
+                                 && rvalue[0] == "regexp" && /^script/i.test(rvalue[1])) {
+                                right = " " + right;
+                        }
                         return add_spaces([ left, operator, right ]);
                 },
                 "unary-prefix": function(operator, expr) {
@@ -1405,7 +1513,7 @@ function gen_code(ast, options) {
                                                 // body in p[1][3] and type ("get" / "set") in p[2].
                                                 return indent(make_function(p[0], p[1][2], p[1][3], p[2]));
                                         }
-                                        var key = p[0], val = make(p[1]);
+                                        var key = p[0], val = parenthesize(p[1], "seq");
                                         if (options.quote_keys) {
                                                 key = encode_string(key);
                                         } else if ((typeof key == "number" || !beautify && +key + "" == key)

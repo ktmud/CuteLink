@@ -1,16 +1,15 @@
 /**
 * CuteLink v0.0.1
 *
-* Date: Wed Aug 3 17:58:23 2011 +0800
+* Date: Wed Aug 3 18:31:26 2011 +0800
 *
 * Copyright given up 2011, Jianchao Yang.
 *
 * You can do whatever you want with this.
 *
 */
-
-//Extend KISSY
 (function(S) {
+  //Extend KISSY
   S.mix(S, {
     /**
     * @param {array} funs 需要执行的函数，一个文本数组.
@@ -109,6 +108,8 @@ KISSY.add('cutelink', function(S) {
 
   return CuteLink;
 });
+
+// to parse, merge and save url parameters.
 KISSY.add('cutelink/urltools', function(S, undefined) {
   var win = window,
   PAT_SEARCH = /\?(\w[^#]+)/,
@@ -333,6 +334,17 @@ KISSY.add('cutelink/urltools', function(S, undefined) {
     return sorted;
   }
 });
+/**
+* [History Manager]
+*
+* to set location.href and make history.
+*
+* need config.pushState to be true when register a new basecamp.
+*
+* TODO: IE6, IE7 support.
+* could've used iframe, but too tricky and unstable.
+*
+*/
 KISSY.add('cutelink/history', function(S, undefined) {
   var win = window,
   doc = document,
@@ -497,10 +509,14 @@ KISSY.add('cutelink/history', function(S, undefined) {
     }
   });
 
+  //start a new history manager instance.
   CuteLink.history = new CuteLink.History();
 
   CuteLink.history.start();
 });
+/**
+* register, event hanndle, all in one.
+*/
 KISSY.add('cutelink/register', function(S, undefined) {
   var win = window,
   doc = document,
